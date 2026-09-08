@@ -1,6 +1,21 @@
 # oh-my-notes
 
+<div align="center">
+
+<!-- HERO BANNER — görseli documents/banner.png olarak ekledikten sonra bu satırın yorum işaretini kaldır:
+<img src="documents/banner.png" width="1280" alt="oh-my-notes — terminal-native notes">
+-->
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python](https://img.shields.io/badge/python-3.8%2B-blue)
+[![Testing](https://img.shields.io/badge/tests-46%20passing-brightgreen)](tests/)
+![Dependencies: none](https://img.shields.io/badge/dependencies-none-orange)
+
+</div>
+
 **`omn`** — developer-first notes that live entirely in your terminal.
+
+> Fast · dependency-free · single-install … or the same idea packed smaller.
 
 A fast, dependency-free, single-install note tool for people who already live
 in the shell. Notes are plain JSON files on disk — inspectable, greppable,
