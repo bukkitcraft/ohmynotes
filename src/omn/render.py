@@ -332,29 +332,21 @@ _HELP_CMDS = [
 ]
 
 
-def _disp_width(s: str) -> int:
-    """Visible terminal columns: any non-ASCII glyph (emoji, CJK, dingbats
-    like ➕ U+2795) = 2, variation selectors (U+FE00–FE0F) = 1, ASCII = 1.
-    Terminals lay out the VS as its own column even when the emoji glyph is
-    one wide cell, so counting it keeps labels column-aligned."""
-    w = 0
-    for ch in s:
-        w += 1 if ch.isascii() or 0xFE00 <= ord(ch) <= 0xFE0F else 2
-    return w
-
-
-def _pad_disp(s: str, target: int) -> str:
-    """Left-justify s to ``target`` *display* columns (emoji-aware)."""
-    return s + " " * max(0, target - _disp_width(s))
-
-
 def render_help_commands() -> str:
-    """Render the compact two-column command summary shown by bare ``omn``."""
+    """Render the compact two-column command summary shown by bare ``omn``.
+
+    Descriptions are aligned with a tab stop instead of counted spaces.
+    Emojis render as 1 or 2 terminal cells depending on the font, so counted
+    padding can never line up reliably; a tab is the one primitive the
+    terminal lays out itself, in its own cells. The emoji + fixed 8-cell
+    command column always ends inside (8, 16], so DFTAB always lands on the
+    same stop and the description column can never drift.
+    """
     header = _c(BOLD + FG_GREEN, "commands:")
     rows = []
     for name, emoji, desc in _HELP_CMDS:
-        label = f"{emoji} {name}" if _COLOR else name
-        rows.append(f"  {_c(FG_CYAN, _pad_disp(label, 12))} {desc}")
+        left = f"{emoji} {name:<8}" if _COLOR else f"{name:<10}"
+        rows.append(f"  {_c(FG_CYAN, left)}\t{desc}")
     return header + "\n" + "\n".join(rows)
 
 
