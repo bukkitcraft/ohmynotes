@@ -317,23 +317,28 @@ def render_welcome(version: str) -> str:
     return "\n".join(lines)
 
 
+# Emoji are rendered ONLY when colour is on (a real TTY): pipes, files and
+# NO_COLOR output stay plain so no terminal can ever show a tofu box.
+_HELP_CMDS = [
+    ("add",   "➕", "create a note"),
+    ("list",  "📔", "list notes"),
+    ("show",  "👁️", "view a single note"),
+    ("edit",  "✏️", "edit a note"),
+    ("rm",    "❌", "delete a note"),
+    ("tag",   "🏷️", "set a note's single tag"),
+    ("tags",  "🗂️", "tag index"),
+    ("search", "🔍", "full-text search"),
+    ("config", "📝", "choose banner style & gradient"),
+]
+
+
 def render_help_commands() -> str:
     """Render the compact two-column command summary shown by bare ``omn``."""
-    cmds = [
-        ("add",  "create a note"),
-        ("list", "list notes"),
-        ("show", "view a single note"),
-        ("edit", "edit a note"),
-        ("rm",   "delete a note"),
-        ("tag",  "manage a note's tags"),
-        ("tags", "tag index"),
-        ("search", "full-text search"),
-        ("config", "choose banner style & gradient"),
-    ]
     header = _c(BOLD + FG_GREEN, "commands:")
     rows = []
-    for name, desc in cmds:
-        rows.append(f"  {_c(FG_CYAN, name.ljust(8))} {desc}")
+    for name, emoji, desc in _HELP_CMDS:
+        label = f"{emoji} {name}" if _COLOR else name
+        rows.append(f"  {_c(FG_CYAN, label.ljust(10))} {desc}")
     return header + "\n" + "\n".join(rows)
 
 

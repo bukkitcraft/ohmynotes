@@ -110,7 +110,7 @@ omn rm q3-okrs --force
 
 ## Command reference
 
-### `omn add [TITLE] [-m MESSAGE] [-t TAG ...]`
+### ➕ `omn add [TITLE] [-m MESSAGE] [-t TAG]`
 
 Create a note.
 
@@ -121,12 +121,12 @@ Create a note.
   the stable identifier for every later command.
 - Empty editor sessions are discarded (`note discarded`).
 
-### `omn list [ls] [-t TAG ...]`
+### 📔 `omn list [ls] [-t TAG]`
 
 List all notes, newest first. Each row shows the slug, age, the single tag,
 and a preview. `-t` filters to notes carrying that tag.
 
-### `omn show [SLUG|TAG] [-v]`
+### 👁️ `omn show [SLUG|TAG] [-v]`
 
 Print a note in full: title, tag, timestamps, body. A bare word is tried as a
 **slug first**; if no note has that slug it is treated as a **tag filter** and
@@ -136,16 +136,16 @@ Without an argument, shows the same interactive note picker as `omn tag` —
 type a slug, a `#number`, or search text; press enter empty to cancel.
 `-v` also prints internal metadata.
 
-### `omn edit SLUG [-m MESSAGE] [-T TITLE] [-t TAG]`
+### ✏️ `omn edit SLUG [-m MESSAGE] [-T TITLE] [-t TAG]`
 
 Edit a note. Without `-m`, opens `$EDITOR` with the current note. With `-m`,
 replaces the body inline (`-t` replaces the note's single tag when given).
 
-### `omn rm|delete|del SLUG [-f]`
+### ❌ `omn rm|delete|del SLUG [-f]`
 
 Delete a note. Asks for confirmation unless `--force`.
 
-### `omn tag [SLUG] [-t TAG] [-r] [-s]`
+### 🏷️ `omn tag [SLUG] [-t TAG] [-r] [-s]`
 
 A note has **exactly one tag** (or none) — deliberately simple. `-t TAG` sets
 it, `-r` removes it, `-s` prints it. Tags are normalised (`#sql` → `sql`).
@@ -154,17 +154,17 @@ Run **bare `omn tag`** for the interactive picker: type a slug, a `#number`,
 or a free-text search to find and select the note, then type the note's one
 tag (space/`,`/`#` prefixes accepted, Enter on empty clears it).
 
-### `omn tags`
+### 🗂️ `omn tags`
 
 Show every tag with its note count and sample slugs.
 
-### `omn search [QUERY] [-t TAG ...]`
+### 🔍 `omn search [QUERY] [-t TAG]`
 
 Full-text search over titles, bodies, and tags. Matches are ranked (title hits
 score highest), and each result shows a field badge (`[title]`, `[body]`,
 `[tag]`). Combine with `-t` to intersect a tag filter.
 
-### `omn config [-b long|short] [-g PALETTE]`
+### 📝 `omn config [-b long|short] [-g PALETTE]`
 
 Show the current presentation preferences, or set the banner style (`long` /
 `short`) and gradient palette (`default`, `rainbow`, `pastel-rainbow`,
