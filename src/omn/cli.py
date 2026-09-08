@@ -210,6 +210,12 @@ def cmd_edit(args: argparse.Namespace, store: Store) -> int:
 
 
 def cmd_show(args: argparse.Namespace, store: Store) -> int:
+    if not args.slug:
+        note = _pick_note_interactively(store)
+        if note is None:
+            return 0
+        emit(text=render_note(note, verbose=args.verbose))
+        return 0
     note = _require_note(store, args.slug)
     emit(text=render_note(note, verbose=args.verbose))
     return 0
@@ -492,8 +498,8 @@ def _add_subparsers(parser: argparse.ArgumentParser) -> None:
     p_edit.add_argument("-t", "--tag", action="append", dest="tags", metavar="TAG", help="replace all tags")
     p_edit.set_defaults(func=cmd_edit)
 
-    p_show = sub.add_parser("show", help="print a single note")
-    p_show.add_argument("slug", help="note slug")
+    p_show = sub.add_parser("show", help="print a single note (interactive picker if no slug)")
+    p_show.add_argument("slug", nargs="?", help="note slug (interactive picker if omitted)")
     p_show.add_argument("-v", "--verbose", action="store_true", help="print internal metadata")
     p_show.set_defaults(func=cmd_show)
 

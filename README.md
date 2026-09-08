@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-[![Testing](https://img.shields.io/badge/tests-46%20passing-brightgreen)](tests/)
+[![Testing](https://img.shields.io/badge/tests-50%20passing-brightgreen)](tests/)
 ![Dependencies: none](https://img.shields.io/badge/dependencies-none-orange)
 
 </div>
@@ -126,10 +126,11 @@ Create a note.
 List all notes, newest first. Each row shows the slug, age, up to four tags,
 and a preview. `-t` filters to notes carrying **all** given tags.
 
-### `omn show SLUG [-v]`
+### `omn show [SLUG] [-v]`
 
-Print a note in full: title, tags, timestamps, body. `-v` also prints internal
-metadata.
+Print a note in full: title, tags, timestamps, body. Without a slug, shows the
+same interactive note picker as `omn tag` — type a slug, `#number`, or search
+text; press enter empty to cancel. `-v` also prints internal metadata.
 
 ### `omn edit SLUG [-m MESSAGE] [-t TAG ...]`
 
@@ -256,7 +257,7 @@ oh-my-notes/
 │   ├── render.py       # colour-aware terminal rendering
 │   └── text.py         # slugs, relative-time, helpers
 └── tests/
-    └── test_omn.py     # 46 tests, temp-dir isolated
+    └── test_omn.py     # 50 tests, temp-dir isolated
 ```
 
 ---

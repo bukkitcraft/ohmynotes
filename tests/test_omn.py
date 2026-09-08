@@ -345,6 +345,34 @@ class TestCLI(BaseTest):
         store = storage.Store(self._data())
         self.assertEqual(store.load("alpha").tags, {"keep", "newtag"})
 
+    def test_show_interactive_by_slug(self) -> None:
+        """Bare `omn show` → picker selects a note and prints it."""
+        run_cli(self._tmp, "add", "Alpha", "-m", "first note body", data_dir=self._data())
+        with mock.patch("builtins.input", side_effect=["alpha"]):
+            out = run_cli(self._tmp, "show", data_dir=self._data())
+        self.assertIn("Alpha", out)
+        self.assertIn("first note body", out)
+
+    def test_show_interactive_by_number(self) -> None:
+        run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
+        run_cli(self._tmp, "add", "Beta", "-m", "two", data_dir=self._data())
+        with mock.patch("builtins.input", side_effect=["2"]):
+            out = run_cli(self._tmp, "show", data_dir=self._data())
+        self.assertIn("Beta", out)
+        self.assertIn("two", out)
+
+    def test_show_interactive_cancel(self) -> None:
+        run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
+        with mock.patch("builtins.input", side_effect=[""]):
+            out = run_cli(self._tmp, "show", data_dir=self._data())
+        self.assertIn("cancelled", out)
+
+    def test_show_with_slug_still_works(self) -> None:
+        run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
+        out = run_cli(self._tmp, "show", "alpha", data_dir=self._data())
+        self.assertIn("Alpha", out)
+        self.assertIn("one", out)
+
     def test_tag_interactive_space_separated(self) -> None:
         """A free-form answer splits on spaces/# as well as commas."""
         run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
