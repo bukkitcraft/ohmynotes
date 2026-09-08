@@ -335,18 +335,15 @@ _HELP_CMDS = [
 def render_help_commands() -> str:
     """Render the compact two-column command summary shown by bare ``omn``.
 
-    Alignment uses terminal tab stops, never counted spaces: the emulator
-    lays tabs out in its own cells, so emoji width (1 or 2 cells per font)
-    cannot push anything out of line. The emoji gets its own tab so the
-    command name always starts at the same column; a second tab anchors the
-    description. The padded command column (7 cells < stop 8) guarantees all
-    names end before the first stop, so both tabs always land on the same
-    stops regardless of emoji rendering.
+    One literal space separates emoji from the command name (matching what a
+    user typing ``➕ add`` sees); the description is anchored with a tab stop
+    so it stays on the same column regardless of how many cells each emoji
+    occupies in the active font.
     """
     header = _c(BOLD + FG_GREEN, "commands:")
     rows = []
     for name, emoji, desc in _HELP_CMDS:
-        left = f"{emoji}\t{name:<7}" if _COLOR else f"{name:<10}"
+        left = f"{emoji} {name:<7}" if _COLOR else f"{name:<10}"
         rows.append(f"  {_c(FG_CYAN, left)}\t{desc}")
     return header + "\n" + "\n".join(rows)
 
