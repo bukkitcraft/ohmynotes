@@ -1,0 +1,13 @@
+pkgbase = omn
+pkgdesc = Dependency-free terminal notes tool — plain JSON on disk, no server, no lock-in
+pkgver = 1.0.0
+pkgrel = 1
+url = https://github.com/bukkitcraft/ohmynotes
+install = 
+arch = any
+license = MIT
+makedepends = 
+depends = python
+optdepends = nerd-fonts-symbols: icons in the command help list
+source = https://github.com/bukkitcraft/ohmynotes/archive/refs/tags/v1.0.0.tar.gz
+sha256sums = d52ffeaa208b4ea59825b40cef7ce59d4731e0cf26656792f973eaf6ce6e0bab

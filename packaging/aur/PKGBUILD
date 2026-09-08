@@ -1,0 +1,27 @@
+pkgname="omn"
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Dependency-free terminal notes tool — plain JSON on disk, no server, no lock-in"
+arch=('any')
+url="https://github.com/bukkitcraft/ohmynotes"
+license=('MIT')
+depends=('python')
+optdepends=('nerd-fonts-symbols: icons in the command help list')
+source=("https://github.com/bukkitcraft/ohmynotes/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('d52ffeaa208b4ea59825b40cef7ce59d4731e0cf26656792f973eaf6ce6e0bab')
+
+prepare() {
+  cd "$srcdir/ohmynotes-${pkgver}"
+  # Minimal smoke test before shipping.
+  PYTHONPATH=src python3 -m unittest discover -s tests -t . >/dev/null
+}
+
+package() {
+  cd "$srcdir/ohmynotes-${pkgver}"
+  # Drop bytecode left behind by the prepare() smoke test.
+  find src -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null
+  install -d "$pkgdir/usr/lib/omn" "$pkgdir/usr/bin"
+  cp -R src omn bannerlong.txt bannershort.txt "$pkgdir/usr/lib/omn/"
+  ln -s /usr/lib/omn/omn "$pkgdir/usr/bin/omn"
+  ln -s /usr/lib/omn/omn "$pkgdir/usr/bin/ohmynotes"
+}
