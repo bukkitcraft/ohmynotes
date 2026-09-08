@@ -319,14 +319,16 @@ def render_welcome(version: str) -> str:
 
 # Emoji are rendered ONLY when colour is on (a real TTY): pipes, files and
 # NO_COLOR output stay plain so no terminal can ever show a tofu box.
+# Deliberately no U+FE0F variation selectors: some fonts merge the VS into
+# a wide glyph and swallow the following space, gluing emoji to the name.
 _HELP_CMDS = [
     ("add",   "➕", "create a note"),
     ("list",  "📔", "list notes"),
-    ("show",  "👁️", "view a single note"),
-    ("edit",  "✏️", "edit a note"),
+    ("show",  "👁", "view a single note"),
+    ("edit",  "🖊", "edit a note"),
     ("rm",    "❌", "delete a note"),
-    ("tag",   "🏷️", "set a note's single tag"),
-    ("tags",  "🗂️", "tag index"),
+    ("tag",   "🏷", "set a note's single tag"),
+    ("tags",  "🗂", "tag index"),
     ("search", "🔍", "full-text search"),
     ("config", "📝", "choose banner style & gradient"),
 ]
