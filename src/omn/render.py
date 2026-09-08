@@ -333,14 +333,14 @@ _HELP_CMDS = [
 
 
 def _disp_width(s: str) -> int:
-    """Visible terminal columns: wide chars (emoji, CJK) = 2, variation
-    selectors (U+FE0F) = 0, everything else = 1."""
+    """Visible terminal columns: any non-ASCII glyph (emoji, CJK, dingbats
+    like ➕ U+2795) = 2, variation selectors (U+FE00–FE0F) = 0, ASCII = 1."""
     w = 0
     for ch in s:
         o = ord(ch)
         if 0xFE00 <= o <= 0xFE0F:
             continue
-        w += 2 if o > 0x2FFF or ch.isascii() is False else 1
+        w += 1 if ch.isascii() else 2
     return w
 
 
