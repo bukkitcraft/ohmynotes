@@ -332,13 +332,30 @@ _HELP_CMDS = [
 ]
 
 
+def _disp_width(s: str) -> int:
+    """Visible terminal columns: wide chars (emoji, CJK) = 2, variation
+    selectors (U+FE0F) = 0, everything else = 1."""
+    w = 0
+    for ch in s:
+        o = ord(ch)
+        if 0xFE00 <= o <= 0xFE0F:
+            continue
+        w += 2 if o > 0x2FFF or ch.isascii() is False else 1
+    return w
+
+
+def _pad_disp(s: str, target: int) -> str:
+    """Left-justify s to ``target`` *display* columns (emoji-aware)."""
+    return s + " " * max(0, target - _disp_width(s))
+
+
 def render_help_commands() -> str:
     """Render the compact two-column command summary shown by bare ``omn``."""
     header = _c(BOLD + FG_GREEN, "commands:")
     rows = []
     for name, emoji, desc in _HELP_CMDS:
         label = f"{emoji} {name}" if _COLOR else name
-        rows.append(f"  {_c(FG_CYAN, label.ljust(10))} {desc}")
+        rows.append(f"  {_c(FG_CYAN, _pad_disp(label, 12))} {desc}")
     return header + "\n" + "\n".join(rows)
 
 
