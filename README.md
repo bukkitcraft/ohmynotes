@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-[![Testing](https://github.com/bukkictaft/ohmynotes/actions/workflows/test.yml/badge.svg)](https://github.com/bukkictaft/ohmynotes/actions/workflows/test.yml)
+[![Testing](https://github.com/bukkitcraft/ohmynotes/actions/workflows/test.yml/badge.svg)](https://github.com/bukkitcraft/ohmynotes/actions/workflows/test.yml)
 ![Dependencies: none](https://img.shields.io/badge/dependencies-none-orange)
 
 </div>
@@ -32,13 +32,13 @@ Requires **Python 3.8+** and a POSIX shell. No other dependencies.
 yay -S omn
 
 # Homebrew (macOS / Linux)
-brew install bukkictaft/tap/omn
+brew install bukkitcraft/tap/omn
 ```
 
 **The pampered script** (works on every platform, one command):
 
 ```bash
-git clone https://github.com/bukkictaft/ohmynotes   # wherever you keep tools
+git clone https://github.com/bukkitcraft/ohmynotes   # wherever you keep tools
 cd ohmynotes
 sh install.sh
 ```
