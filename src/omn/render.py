@@ -334,13 +334,12 @@ _HELP_CMDS = [
 
 def _disp_width(s: str) -> int:
     """Visible terminal columns: any non-ASCII glyph (emoji, CJK, dingbats
-    like ➕ U+2795) = 2, variation selectors (U+FE00–FE0F) = 0, ASCII = 1."""
+    like ➕ U+2795) = 2, variation selectors (U+FE00–FE0F) = 1, ASCII = 1.
+    Terminals lay out the VS as its own column even when the emoji glyph is
+    one wide cell, so counting it keeps labels column-aligned."""
     w = 0
     for ch in s:
-        o = ord(ch)
-        if 0xFE00 <= o <= 0xFE0F:
-            continue
-        w += 1 if ch.isascii() else 2
+        w += 1 if ch.isascii() or 0xFE00 <= ord(ch) <= 0xFE0F else 2
     return w
 
 
