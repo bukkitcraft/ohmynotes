@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+"""oh-my-notes (omn) launcher.
+
+Runs the package from a source checkout (no installation required for
+development) or from site-packages after ``pip install``. ``install.sh``
+symlinks this file into ``~/.local/bin/omn``; ``__file__`` may therefore
+point at the symlink, which we resolve so the source tree is found even when
+the copy in ``~/.local/bin`` is not itself inside the project.
+"""
+
+import os
+import sys
+
+_here = os.path.realpath(__file__)
+_candidates = (
+    os.path.join(os.path.dirname(_here), "src"),
+    os.path.join(os.path.dirname(_here), "..", "src"),
+    os.path.join(os.path.expanduser("~/.local/share/omn"), "lib", "src"),
+)
+for _src in _candidates:
+    if os.path.isdir(_src):
+        sys.path.insert(0, _src)
+        break
+
+from omn.cli import main  # noqa: E402
+
+if __name__ == "__main__":
+    raise SystemExit(main())
