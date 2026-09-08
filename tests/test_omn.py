@@ -361,6 +361,14 @@ class TestCLI(BaseTest):
         self.assertIn("Beta", out)
         self.assertIn("two", out)
 
+    def test_tag_interactive_ignores_escape_chars(self) -> None:
+        """ESC/^C sequences pasted into the add field are dropped, not tagified."""
+        run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
+        with mock.patch("builtins.input", side_effect=["alpha", "\x1b\x1b\x03real", "\x1b\x1b\x03"]):
+            run_cli(self._tmp, "tag", data_dir=self._data())
+        store = storage.Store(self._data())
+        self.assertEqual(store.load("alpha").tags, {"real"})
+
     def test_show_interactive_cancel(self) -> None:
         run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
         with mock.patch("builtins.input", side_effect=[""]):

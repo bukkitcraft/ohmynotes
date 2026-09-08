@@ -125,11 +125,12 @@ def _parse_tags(values: list[str] | None) -> list[str]:
 def _parse_tag_input(raw: str) -> list[str]:
     """Split a free-form interactive answer into tag tokens.
 
-    Accepts space-, comma-, or ``#``-separated tags in one line.
+    Accepts space-, comma-, or ``#``-separated tags in one line. Control
+    characters (ESC/^C — accidentally typed escape sequences) are dropped.
     """
     cleaned: list[str] = []
     for part in raw.replace(",", " ").split():
-        tag = part.lstrip("#").strip()
+        tag = "".join(ch for ch in part.lstrip("#").strip() if ch.isprintable())
         if tag and tag not in cleaned:
             cleaned.append(tag)
     return cleaned
