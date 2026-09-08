@@ -185,8 +185,8 @@ class Store:
         """Rebuild ``{tag: [slug,...]}`` from the actual note files."""
         index: dict[str, list[str]] = {}
         for note in self.all():
-            for tag in note.tags:
-                index.setdefault(tag, []).append(note.slug)
+            if note.tag:
+                index.setdefault(note.tag, []).append(note.slug)
         for slugs in index.values():
             slugs.sort()
         self._atomic_write(self.tags_path, json.dumps(index, ensure_ascii=False, indent=2))

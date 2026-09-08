@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-[![Testing](https://img.shields.io/badge/tests-50%20passing-brightgreen)](tests/)
+[![Testing](https://img.shields.io/badge/tests-54%20passing-brightgreen)](tests/)
 ![Dependencies: none](https://img.shields.io/badge/dependencies-none-orange)
 
 </div>
@@ -123,32 +123,36 @@ Create a note.
 
 ### `omn list [ls] [-t TAG ...]`
 
-List all notes, newest first. Each row shows the slug, age, up to four tags,
-and a preview. `-t` filters to notes carrying **all** given tags.
+List all notes, newest first. Each row shows the slug, age, the single tag,
+and a preview. `-t` filters to notes carrying that tag.
 
-### `omn show [SLUG] [-v]`
+### `omn show [SLUG|TAG] [-v]`
 
-Print a note in full: title, tags, timestamps, body. Without a slug, shows the
-same interactive note picker as `omn tag` — type a slug, `#number`, or search
-text; press enter empty to cancel. `-v` also prints internal metadata.
+Print a note in full: title, tag, timestamps, body. A bare word is tried as a
+**slug first**; if no note has that slug it is treated as a **tag filter** and
+the picker lists only notes tagged `#TAG` — so `omn show gunluk` opens the
+note "gunluk" if it exists, otherwise lets you pick among `#gunluk` notes.
+Without an argument, shows the same interactive note picker as `omn tag` —
+type a slug, a `#number`, or search text; press enter empty to cancel.
+`-v` also prints internal metadata.
 
-### `omn edit SLUG [-m MESSAGE] [-t TAG ...]`
+### `omn edit SLUG [-m MESSAGE] [-T TITLE] [-t TAG]`
 
 Edit a note. Without `-m`, opens `$EDITOR` with the current note. With `-m`,
-replaces the body inline (`-t` replaces all tags when given).
+replaces the body inline (`-t` replaces the note's single tag when given).
 
 ### `omn rm|delete|del SLUG [-f]`
 
 Delete a note. Asks for confirmation unless `--force`.
 
-### `omn tag [SLUG] [-a TAG ...] [-r TAG ...] [-s]`
+### `omn tag [SLUG] [-t TAG] [-r] [-s]`
 
-Add (`-a`) or remove (`-r`) tags; `-s` prints the current tags. Tags are
-normalised (`#sql, DB` → `sql`, `db`).
+A note has **exactly one tag** (or none) — deliberately simple. `-t TAG` sets
+it, `-r` removes it, `-s` prints it. Tags are normalised (`#sql` → `sql`).
 
 Run **bare `omn tag`** for the interactive picker: type a slug, a `#number`,
-or a free-text search to find and select the note, then enter tags to add and
-to remove (space/`,`/`#` separated, Enter to skip).
+or a free-text search to find and select the note, then type the note's one
+tag (space/`,`/`#` prefixes accepted, Enter on empty clears it).
 
 ### `omn tags`
 
@@ -257,7 +261,7 @@ oh-my-notes/
 │   ├── render.py       # colour-aware terminal rendering
 │   └── text.py         # slugs, relative-time, helpers
 └── tests/
-    └── test_omn.py     # 50 tests, temp-dir isolated
+    └── test_omn.py     # 54 tests, temp-dir isolated
 ```
 
 ---

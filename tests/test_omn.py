@@ -73,12 +73,12 @@ def _rmtree(path: str) -> None:
 class TestStorage(BaseTest):
     def test_save_load_round_trip(self) -> None:
         store = self.store()
-        n = Note(slug="abc123", title="Hello", body="world", tags={"a", "b"})
+        n = Note(slug="abc123", title="Hello", body="world", tag="a")
         store.save(n)
         got = store.load("abc123")
         self.assertEqual(got.title, "Hello")
         self.assertEqual(got.body, "world")
-        self.assertEqual(got.tags, {"a", "b"})
+        self.assertEqual(got.tag, "a")
 
     def test_missing_raises_keyerror(self) -> None:
         store = self.store()
@@ -127,8 +127,8 @@ class TestText(BaseTest):
 
 
 class TestSearch(BaseTest):
-    def test_match_title_and_body_and_tags(self) -> None:
-        n = Note(slug="x", title="Battery settings", body="Check the gauge", tags={"hardware"})
+    def test_match_title_body_and_tag(self) -> None:
+        n = Note(slug="x", title="Battery settings", body="Check the gauge", tag="hardware")
         results = search.search_notes([n], query="battery")
         self.assertEqual(len(results), 1)
         self.assertIn("title", results[0].matched_fields)
@@ -140,10 +140,10 @@ class TestSearch(BaseTest):
         results = search.search_notes([n], query="hardware")
         self.assertEqual(len(results), 1)
 
-    def test_tag_filter_requires_all(self) -> None:
-        n1 = Note(slug="a", title="t", body="", tags={"x", "y"})
-        n2 = Note(slug="b", title="t", body="", tags={"x"})
-        got = search.search_notes([n1, n2], tags=["x", "y"])
+    def test_tag_filter_single(self) -> None:
+        n1 = Note(slug="a", title="t", body="", tag="x")
+        n2 = Note(slug="b", title="t", body="", tag="y")
+        got = search.search_notes([n1, n2], tags=["x"])
         self.assertEqual([m.note.slug for m in got], ["a"])
 
     def test_no_match_empty(self) -> None:
@@ -333,17 +333,17 @@ class TestCLI(BaseTest):
         notes = store.all()
         self.assertEqual(len(notes), 1)
         self.assertEqual(notes[0].title, "Hello World")
-        self.assertEqual(notes[0].tags, {"greeting"})
+        self.assertEqual(notes[0].tag, "greeting")
 
     def test_tag_interactive_by_slug(self) -> None:
-        """Bare `omn tag` → picker matches a slug and updates tags."""
+        """Bare `omn tag` → picker matches a slug and sets the single tag."""
         run_cli(self._tmp, "add", "Alpha", "-m", "first", "-t", "keep", data_dir=self._data())
-        with mock.patch("builtins.input", side_effect=["alpha", "newtag", ""]):
+        with mock.patch("builtins.input", side_effect=["alpha", "newtag"]):
             out = run_cli(self._tmp, "tag", data_dir=self._data())
-        self.assertIn("current tags", out)
-        self.assertIn("tags updated", out)
+        self.assertIn("current tag", out)
+        self.assertIn("tag updated", out)
         store = storage.Store(self._data())
-        self.assertEqual(store.load("alpha").tags, {"keep", "newtag"})
+        self.assertEqual(store.load("alpha").tag, "newtag")
 
     def test_show_interactive_by_slug(self) -> None:
         """Bare `omn show` → picker selects a note and prints it."""
@@ -362,12 +362,12 @@ class TestCLI(BaseTest):
         self.assertIn("two", out)
 
     def test_tag_interactive_ignores_escape_chars(self) -> None:
-        """ESC/^C sequences pasted into the add field are dropped, not tagified."""
+        """ESC/^C sequences pasted into the tag field are dropped, not tagified."""
         run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
-        with mock.patch("builtins.input", side_effect=["alpha", "\x1b\x1b\x03real", "\x1b\x1b\x03"]):
+        with mock.patch("builtins.input", side_effect=["alpha", "\x1b\x1b\x03real\x1b\x1b\x03"]):
             run_cli(self._tmp, "tag", data_dir=self._data())
         store = storage.Store(self._data())
-        self.assertEqual(store.load("alpha").tags, {"real"})
+        self.assertEqual(store.load("alpha").tag, "real")
 
     def test_show_interactive_cancel(self) -> None:
         run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
@@ -381,29 +381,29 @@ class TestCLI(BaseTest):
         self.assertIn("Alpha", out)
         self.assertIn("one", out)
 
-    def test_tag_interactive_space_separated(self) -> None:
-        """A free-form answer splits on spaces/# as well as commas."""
+    def test_tag_interactive_space_hashed(self) -> None:
+        """A free-form answer accepts #/space/comma prefixes; first tag wins."""
         run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
-        with mock.patch("builtins.input", side_effect=["alpha", "#db perf infra", ""]):
+        with mock.patch("builtins.input", side_effect=["alpha", "#db perf infra"]):
             run_cli(self._tmp, "tag", data_dir=self._data())
         store = storage.Store(self._data())
-        self.assertEqual(store.load("alpha").tags, {"db", "perf", "infra"})
+        self.assertEqual(store.load("alpha").tag, "db")
 
     def test_tag_interactive_by_number_and_removal(self) -> None:
         run_cli(self._tmp, "add", "Alpha", "-m", "one", "-t", "old", data_dir=self._data())
-        with mock.patch("builtins.input", side_effect=["1", "", "old"]):
+        with mock.patch("builtins.input", side_effect=["1", ""]):
             run_cli(self._tmp, "tag", data_dir=self._data())
         store = storage.Store(self._data())
-        self.assertEqual(store.load("alpha").tags, set())
+        self.assertEqual(store.load("alpha").tag, "")
 
     def test_tag_interactive_by_search(self) -> None:
         run_cli(self._tmp, "add", "Project Kyber", "-m", "core database", data_dir=self._data())
         run_cli(self._tmp, "add", "Project Nacho", "-m", "snack time", data_dir=self._data())
-        with mock.patch("builtins.input", side_effect=["database", "db", ""]):
+        with mock.patch("builtins.input", side_effect=["database", "db"]):
             out = run_cli(self._tmp, "tag", data_dir=self._data())
-        self.assertIn("tags updated", out)
+        self.assertIn("tag updated", out)
         store = storage.Store(self._data())
-        self.assertEqual(store.load("project-kyber").tags, {"db"})
+        self.assertEqual(store.load("project-kyber").tag, "db")
 
     def test_tag_interactive_cancel(self) -> None:
         run_cli(self._tmp, "add", "Alpha", "-m", "one", data_dir=self._data())
@@ -411,11 +411,11 @@ class TestCLI(BaseTest):
             out = run_cli(self._tmp, "tag", data_dir=self._data())
         self.assertIn("cancelled", out)
         store = storage.Store(self._data())
-        self.assertEqual(store.load("alpha").tags, set())
+        self.assertEqual(store.load("alpha").tag, "")
 
     def test_tag_interactive_requires_slug_with_flags(self) -> None:
         with self.assertRaises(AssertionError):
-            run_cli(self._tmp, "tag", "-a", "x", data_dir=self._data())
+            run_cli(self._tmp, "tag", "-t", "x", data_dir=self._data())
 
     def test_add_editor_uses_fake_editor(self) -> None:
         fake = os.path.join(self._tmp, "fake_ed.sh")
@@ -449,65 +449,87 @@ class TestCLI(BaseTest):
         self.assertIn("discarded", out)
         self.assertEqual(storage.Store(self._data()).all(), [])
 
-    def _seed(self, slug: str, title: str, body: str, tags: set[str]) -> None:
+    def _seed(self, slug: str, title: str, body: str, tag: str) -> None:
         store = storage.Store(self._data())
-        store.save(Note(slug=slug, title=title, body=body, tags=tags))
+        store.save(Note(slug=slug, title=title, body=body, tag=tag))
 
     def test_show(self) -> None:
-        self._seed("abc1", "Hello", "wonderful body", {"x"})
+        self._seed("abc1", "Hello", "wonderful body", "x")
         out = run_cli(self._tmp, "show", "abc1", data_dir=self._data())
         self.assertIn("Hello", out)
         self.assertIn("wonderful body", out)
 
     def test_show_missing(self) -> None:
-        os.environ[storage.ENV_DATA_DIR] = self._data()
-        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-            rc = cli.main(["show", "missing"])
-        os.environ.pop(storage.ENV_DATA_DIR, None)
-        self.assertEqual(rc, 1)
+        """An unknown word is read as a tag filter → "no notes tagged"."""
+        out = run_cli(self._tmp, "show", "missing", data_dir=self._data())
+        self.assertIn("no notes tagged", out)
 
     def test_edit_inline(self) -> None:
-        self._seed("abc1", "Hello", "old body", set())
+        self._seed("abc1", "Hello", "old body", "")
         run_cli(self._tmp, "edit", "abc1", "-m", "new body", data_dir=self._data())
         note = storage.Store(self._data()).load("abc1")
         self.assertEqual(note.body, "new body")
 
     def test_rm_force(self) -> None:
-        self._seed("abc1", "Hello", "", set())
+        self._seed("abc1", "Hello", "", "")
         run_cli(self._tmp, "rm", "abc1", "--force", data_dir=self._data())
         self.assertEqual(storage.Store(self._data()).all(), [])
 
-    def test_tag_add_remove(self) -> None:
-        self._seed("abc1", "Hello", "", {"a"})
-        run_cli(self._tmp, "tag", "abc1", "-a", "b", "-a", "c", data_dir=self._data())
+    def test_tag_set_and_remove(self) -> None:
+        self._seed("abc1", "Hello", "", "a")
+        run_cli(self._tmp, "tag", "abc1", "-t", "b", data_dir=self._data())
         note = storage.Store(self._data()).load("abc1")
-        self.assertEqual(note.tags, {"a", "b", "c"})
-        run_cli(self._tmp, "tag", "abc1", "-r", "a", data_dir=self._data())
-        self.assertEqual(storage.Store(self._data()).load("abc1").tags, {"b", "c"})
+        self.assertEqual(note.tag, "b")
+        run_cli(self._tmp, "tag", "abc1", "-r", data_dir=self._data())
+        self.assertEqual(storage.Store(self._data()).load("abc1").tag, "")
+
+    def test_show_by_tag_slug(self) -> None:
+        """`omn show x` when no note is slug 'x'→ picker scoped to #x notes."""
+        self._seed("a1", "Alpha", "aa", "x")
+        self._seed("b1", "Beta", "bb", "y")
+        with mock.patch("builtins.input", side_effect=["1"]):
+            out = run_cli(self._tmp, "show", "x", data_dir=self._data())
+        self.assertIn("Alpha", out)
+        self.assertNotIn("Beta", out)
+
+    def test_show_slug_beats_tag(self) -> None:
+        """A matching note slug wins over the tag interpretation."""
+        self._seed("gunluk", "Gunluk Notum", "iceri", "x")
+        out = run_cli(self._tmp, "show", "gunluk", data_dir=self._data())
+        self.assertIn("Gunluk Notum", out)
+        self.assertNotIn("pick note", out)
 
     def test_search(self) -> None:
-        self._seed("a1", "Battery", "electrons", {"hardware"})
-        self._seed("b1", "Notes about coding", "python loops", {"dev"})
+        self._seed("a1", "Battery", "electrons", "hardware")
+        self._seed("b1", "Notes about coding", "python loops", "dev")
         out = run_cli(self._tmp, "search", "python", data_dir=self._data())
         self.assertIn("b1", out)
         self.assertNotIn("a1", out)
 
     def test_search_empty_query_errors(self) -> None:
-        self._seed("a1", "Battery", "electrons", set())
+        self._seed("a1", "Battery", "electrons", "")
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
             rc = cli.main(["search", ""])
         self.assertEqual(rc, 1)
 
     def test_tags_command(self) -> None:
-        self._seed("a1", "x", "y", {"alpha", "beta"})
+        self._seed("a1", "x", "y", "alpha")
+        self._seed("a2", "w", "z", "beta")
         out = run_cli(self._tmp, "tags", data_dir=self._data())
         self.assertIn("#alpha", out)
         self.assertIn("#beta", out)
 
     def test_list(self) -> None:
-        self._seed("a1", "First", "content here", {"go"})
+        self._seed("a1", "First", "content here", "go")
         out = run_cli(self._tmp, "list", data_dir=self._data())
         self.assertIn("a1", out)
+
+    def test_list_filter(self) -> None:
+        self._seed("a1", "First", "content here", "go")
+        self._seed("b1", "Second", "content", "no")
+        out = run_cli(self._tmp, "list", "-t", "go", data_dir=self._data())
+        self.assertIn("a1", out)
+        self.assertNotIn("b1", out)
 
     def test_list_empty(self) -> None:
         out = run_cli(self._tmp, "list", data_dir=self._data())

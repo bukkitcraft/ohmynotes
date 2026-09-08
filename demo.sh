@@ -35,9 +35,9 @@ say "oh-my-notes demo — data dir: $DEMO_DATA"
 step "$BIN" --version
 
 say "Create notes (inline + tag)"
-step "$BIN" add "Intro to omn" -m "Notes that live entirely in your terminal." -t intro -t meta
-step "$BIN" add "SSH key rotation" -m "Rotate every 90 days; store passphrase in the vault." -t security -t ops
-step "$BIN" add "Postgres tuning" -m "shared_buffers = 25% RAM; effective_cache_size = 75%." -t db -t ops
+step "$BIN" add "Intro to omn" -m "Notes that live entirely in your terminal." -t meta
+step "$BIN" add "SSH key rotation" -m "Rotate every 90 days; store passphrase in the vault." -t ops
+step "$BIN" add "Postgres tuning" -m "shared_buffers = 25% RAM; effective_cache_size = 75%." -t db
 
 say "List all notes"
 step "$BIN" list
@@ -51,8 +51,10 @@ step "$BIN" search "postgres"
 say "Tag index"
 step "$BIN" tags
 
-say "Add a tag to a note"
-step "$BIN" tag postgres-tuning -a performance
+say "Pick from a tag's notes (show <tag> when no slug matches)"
+step "$BIN" show ops <<'EOF'
+1
+EOF
 
 say "Edit a note inline"
 step "$BIN" edit postgres-tuning -m "shared_buffers = 25% RAM; work_mem bumped for the import job."

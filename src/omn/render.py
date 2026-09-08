@@ -359,10 +359,10 @@ def format_timestamp(iso_ts: str, *, with_date: bool = True) -> str:
     return pretty
 
 
-def _tags(tags: set[str]) -> str:
-    if not tags:
+def _tag(note: Note) -> str:
+    if not note.tag:
         return _c(FG_GRAY, "—")
-    return " ".join(_c(FG_MAGENTA, f"#{t}") for t in sorted(tags))
+    return _c(FG_MAGENTA, f"#{note.tag}")
 
 
 def render_note(note: Note, *, verbose: bool = False) -> str:
@@ -370,7 +370,7 @@ def render_note(note: Note, *, verbose: bool = False) -> str:
     lines = [
         _c(BOLD + FG_CYAN, note.title) if note.title else _c(FG_GRAY, "(untitled)"),
         _c(FG_GRAY, f"slug: {note.slug}"),
-        _c(FG_GRAY, f"tags: {_tags(note.tags)}"),
+        _c(FG_GRAY, f"tag: {_tag(note)}"),
         _c(FG_GRAY, f"created: {format_timestamp(note.created)}   updated: {format_timestamp(note.updated)}"),
     ]
     if note.body:
@@ -394,10 +394,10 @@ def render_list(notes: list[Note]) -> str:
         # count ANSI escape bytes and skew the columns when colour is on.
         slug = _c(FG_BLUE, n.slug[:max_slug].ljust(max_slug + 2))
         time = _c(FG_GRAY, relative_time(n.updated).rjust(10))
-        tags = " ".join(f"#{t}" for t in sorted(n.tags)[:4])
+        tag = f"#{n.tag}" if n.tag else ""
         preview = n.preview(max(20, pad - (max_slug + 2) - 10 - 16 - 2))
-        out.append(f"{slug}{time}  {_c(FG_MAGENTA, tags.ljust(16))} {preview}")
-    header = f"{'SLUG'.ljust(max_slug + 2)}{'AGE':>10}  {'TAGS':<16} {'PREVIEW'}"
+        out.append(f"{slug}{time}  {_c(FG_MAGENTA, tag.ljust(16))} {preview}")
+    header = f"{'SLUG'.ljust(max_slug + 2)}{'AGE':>10}  {'TAG':<16} {'PREVIEW'}"
     out.insert(0, _c(FG_GRAY, header))
     return "\n".join(out)
 
@@ -410,9 +410,10 @@ def render_search(matches: list[SearchMatch]) -> str:
     for m in matches:
         badge = ",".join(m.matched_fields)
         preview = m.note.preview(60)
+        tag = f" #{_c(FG_MAGENTA, m.note.tag)}" if m.note.tag else ""
         out.append(
             f"{_c(BOLD + FG_CYAN, m.note.title) or _c(FG_GRAY, '(untitled)')} "
-            f"{_c(FG_MAGENTA, '#' + m.note.slug)} {_c(FG_GRAY, f'[{badge}]')} {_c(FG_YELLOW, str(m.score))}\n    {preview}"
+            f"{_c(FG_MAGENTA, '#' + m.note.slug)} {_c(FG_GRAY, f'[{badge}]')} {_c(FG_YELLOW, str(m.score))}{tag}\n    {preview}"
         )
     return "\n".join(out)
 

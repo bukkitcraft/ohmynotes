@@ -110,7 +110,7 @@ def _require_note(store: Store, slug: str) -> Note:
 
 
 def _parse_tags(values: list[str] | None) -> list[str]:
-    """Normalise a list of raw tag args into clean tag tokens."""
+    """Normalise raw tag args into clean tag tokens (first tag wins)."""
     if not values:
         return []
     cleaned: list[str] = []
@@ -122,18 +122,24 @@ def _parse_tags(values: list[str] | None) -> list[str]:
     return cleaned
 
 
-def _parse_tag_input(raw: str) -> list[str]:
-    """Split a free-form interactive answer into tag tokens.
+def _single_tag(values: list[str] | None) -> str:
+    """Return the effective single tag (first token wins) or ``""``."""
+    parsed = _parse_tags(values)
+    return parsed[0] if parsed else ""
 
-    Accepts space-, comma-, or ``#``-separated tags in one line. Control
-    characters (ESC/^C — accidentally typed escape sequences) are dropped.
+
+def _parse_tag_input(raw: str) -> str:
+    """Normalise a free-form interactive answer into a single tag (first wins).
+
+    Accepts an optional leading ``#`` or comma/space separation; the first
+    non-empty printable token is used. Control characters (ESC/^C — accidentally
+    typed escape sequences) are dropped.
     """
-    cleaned: list[str] = []
     for part in raw.replace(",", " ").split():
         tag = "".join(ch for ch in part.lstrip("#").strip() if ch.isprintable())
-        if tag and tag not in cleaned:
-            cleaned.append(tag)
-    return cleaned
+        if tag:
+            return tag
+    return ""
 
 
 def _split_title_first_line(text: str) -> tuple[str, str]:
@@ -173,7 +179,7 @@ def cmd_add(args: argparse.Namespace, store: Store) -> int:
         slug=slug,
         title=title,
         body=body,
-        tags=set(args.tags or []),
+        tag=_single_tag(args.tags),
         created=utcnow_iso(),
         updated=utcnow_iso(),
     )
@@ -190,7 +196,7 @@ def cmd_edit(args: argparse.Namespace, store: Store) -> int:
         note.body = args.message
         note.title = (args.title or note.title).strip() or note.title
         if args.tags is not None:
-            note.tags = set(_parse_tags(args.tags))
+            note.tag = _single_tag(args.tags)
         note.touch()
         store.save(note)
         emit(f"updated {note.slug!r} ({'body' if old_body != note.body else 'no changes'})")
@@ -217,7 +223,16 @@ def cmd_show(args: argparse.Namespace, store: Store) -> int:
             return 0
         emit(text=render_note(note, verbose=args.verbose))
         return 0
-    note = _require_note(store, args.slug)
+    # A bare word is tried as a slug first; only if no note matches is it
+    # treated as a tag filter. This way `omn show gunluk` opens the note
+    # named "gunluk" if it exists, otherwise picks among #gunluk notes.
+    try:
+        note = store.load(args.slug)
+    except KeyError:
+        tag = args.slug.lstrip("#").strip()
+        note = _pick_note_interactively(store, only_tag=tag)
+        if note is None:
+            return 0
     emit(text=render_note(note, verbose=args.verbose))
     return 0
 
@@ -226,7 +241,7 @@ def cmd_list(args: argparse.Namespace, store: Store) -> int:
     notes = store.all()
     if args.tags:
         wanted = set(_parse_tags(args.tags))
-        notes = [n for n in notes if wanted.issubset(set(t.lower() for t in n.tags))]
+        notes = [n for n in notes if n.tag and n.tag.lower() in wanted]
     emit(text=render_list(notes))
     return 0
 
@@ -257,20 +272,27 @@ def _prompt(prompt: str) -> str:
         return ""
 
 
-def _pick_note_interactively(store: Store) -> Note | None:
+def _pick_note_interactively(store: Store, *, only_tag: str = "") -> Note | None:
     """Interactive note picker: match by slug, #number, or free-text search.
 
+    ``only_tag`` (a tag name) narrows the picker to notes carrying that tag.
     Returns the chosen note, or ``None`` if the user aborts (empty answer).
     """
     notes = store.all()
+    if only_tag:
+        notes = [n for n in notes if n.tag == only_tag]
     if not notes:
-        emit("no notes yet — create one with `omn add`")
+        if only_tag:
+            emit(f"no notes tagged #{only_tag} — set a tag with `omn tag`")
+        else:
+            emit("no notes yet — create one with `omn add`")
         return None
 
     def show(items: list[Note]) -> None:
         for i, n in enumerate(items, 1):
             snippet = " ".join(n.preview().split()) or "(empty)"
-            emit(f"  {i:>3}) {n.slug:<24} {snippet}")
+            tag = f" #{n.tag}" if n.tag else ""
+            emit(f"  {i:>3}) {n.slug:<24} {snippet}{tag}")
 
     show(notes)
     while True:
@@ -297,56 +319,58 @@ def _pick_note_interactively(store: Store) -> Note | None:
         show([m.note for m in matches])
 
 
-def _edit_tags_interactively(store: Store, note: Note) -> int:
-    """Interactive add/remove tag round-trip on an already-chosen note."""
-    old = set(note.tags)
-    shown = " ".join(f"#{t}" for t in sorted(note.tags)) or "(no tags)"
+def _edit_tag_interactively(store: Store, note: Note) -> int:
+    """Interactive single-tag round-trip on an already-chosen note.
+
+    The user types the note's one tag (or nothing to untag). Any previous tag
+    is replaced — a note never holds more than one tag.
+    """
+    old = note.tag
+    shown = f"#{old}" if old else "(no tag)"
     emit(f"{note.slug!r} — {note.title}")
-    emit(f"current tags: {shown}")
+    emit(f"current tag: {shown}")
 
-    add_raw = _prompt("add tags (space or # tag, empty to skip): ").strip()
-    remove_raw = _prompt("remove tags (space or # tag, empty to skip): ").strip()
-    additions = _parse_tag_input(add_raw) if add_raw else []
-    removals = _parse_tag_input(remove_raw) if remove_raw else []
+    raw = _prompt("set tag (space or # tag, empty to clear): ").strip()
+    new = _parse_tag_input(raw)
 
-    note.tags.update(additions)
-    note.tags.difference_update(removals)
-    if note.tags == old:
+    if new == old:
         emit("no change")
         return 0
+    note.tag = new
     note.touch()
     store.save(note)
     store.rebuild_tags_index()
-    new = " ".join(f"#{t}" for t in sorted(note.tags)) or "(none)"
-    emit(f"tags updated on {note.slug!r}: {new}")
+    emit(f"tag updated on {note.slug!r}: #{new}" if new else f"tag removed from {note.slug!r}")
     return 0
 
 
 def cmd_tag(args: argparse.Namespace, store: Store) -> int:
     if not args.slug:
-        if args.add or args.remove or args.show:
-            raise CliError(f"{PROG}: tag needs a note slug — see `{PROG} tag SLUG -a foo`")
+        if args.tag:
+            raise CliError(f"{PROG}: tag needs a note slug — see `{PROG} tag SLUG -t foo`")
         note = _pick_note_interactively(store)
         if note is None:
             return 0
-        return _edit_tags_interactively(store, note)
+        return _edit_tag_interactively(store, note)
     note = _require_note(store, args.slug)
-    old = set(note.tags)
-    if args.add:
-        additions = _parse_tags(args.add)
-        note.tags.update(additions)
-    if args.remove:
-        note.tags.difference_update(_parse_tags(args.remove))
-    if args.show:
-        emit(" ".join(f"#{t}" for t in sorted(note.tags)) if note.tags else "(no tags)")
-        return 0
-    if note.tags != old:
-        note.touch()
-        store.save(note)
-        store.rebuild_tags_index()
-        emit(f"tags updated on {note.slug!r}: {' '.join('#'+t for t in sorted(note.tags)) or '(none)'}")
+    old = note.tag
+    if args.tag:
+        new = _single_tag(args.tag)
+    elif args.remove:
+        new = ""
     else:
+        new = old
+    if args.show:
+        emit(f"#{old}" if old else "(no tag)")
+        return 0
+    if new == old:
         emit("no change")
+        return 0
+    note.tag = new
+    note.touch()
+    store.save(note)
+    store.rebuild_tags_index()
+    emit(f"tag updated on {note.slug!r}: #{new}" if new else f"tag removed from {note.slug!r}")
     return 0
 
 
@@ -489,23 +513,23 @@ def _add_subparsers(parser: argparse.ArgumentParser) -> None:
     p_add = sub.add_parser("add", help="create a note")
     p_add.add_argument("title", nargs="?", help="note title (short subject)")
     p_add.add_argument("-m", "--message", help="note body as a single string")
-    p_add.add_argument("-t", "--tag", action="append", dest="tags", metavar="TAG", help="tag the note (repeatable)")
+    p_add.add_argument("-t", "--tag", action="append", dest="tags", metavar="TAG", help="single tag for the note")
     p_add.set_defaults(func=cmd_add)
 
     p_edit = sub.add_parser("edit", help="edit an existing note")
     p_edit.add_argument("slug", help="note slug (from `omn list`)")
     p_edit.add_argument("-m", "--message", help="replace body inline")
     p_edit.add_argument("-T", "--title", help="replace title inline")
-    p_edit.add_argument("-t", "--tag", action="append", dest="tags", metavar="TAG", help="replace all tags")
+    p_edit.add_argument("-t", "--tag", action="append", dest="tags", metavar="TAG", help="replace the note's single tag")
     p_edit.set_defaults(func=cmd_edit)
 
-    p_show = sub.add_parser("show", help="print a single note (interactive picker if no slug)")
-    p_show.add_argument("slug", nargs="?", help="note slug (interactive picker if omitted)")
+    p_show = sub.add_parser("show", help="print a note (slug, tag, or interactive)")
+    p_show.add_argument("slug", nargs="?", help="note slug or tag (slug wins; else tag filter; interactive if omitted)")
     p_show.add_argument("-v", "--verbose", action="store_true", help="print internal metadata")
     p_show.set_defaults(func=cmd_show)
 
     p_list = sub.add_parser("list", aliases=["ls"], help="list notes")
-    p_list.add_argument("-t", "--tag", action="append", dest="tags", metavar="TAG", help="only notes with all these tags")
+    p_list.add_argument("-t", "--tag", action="append", dest="tags", metavar="TAG", help="only notes with this tag")
     p_list.set_defaults(func=cmd_list)
 
     p_rm = sub.add_parser("rm", aliases=["delete", "del"], help="delete a note")
@@ -513,11 +537,11 @@ def _add_subparsers(parser: argparse.ArgumentParser) -> None:
     p_rm.add_argument("-f", "--force", action="store_true", help="delete without confirmation")
     p_rm.set_defaults(func=cmd_rm)
 
-    p_tag = sub.add_parser("tag", help="manage a note's tags")
+    p_tag = sub.add_parser("tag", help="set a note's single tag")
     p_tag.add_argument("slug", nargs="?", help="note slug (interactive picker if omitted)")
-    p_tag.add_argument("-a", "--add", action="append", dest="add", metavar="TAG", help="add tags (repeatable)")
-    p_tag.add_argument("-r", "--remove", action="append", dest="remove", metavar="TAG", help="remove tags (repeatable)")
-    p_tag.add_argument("-s", "--show", action="store_true", help="just print current tags")
+    p_tag.add_argument("-t", "--tag", action="append", dest="tag", metavar="TAG", help="set the note's single tag")
+    p_tag.add_argument("-r", "--remove", action="store_true", help="remove the note's tag")
+    p_tag.add_argument("-s", "--show", action="store_true", help="just print the current tag")
     p_tag.set_defaults(func=cmd_tag)
 
     sub.add_parser("tags", help="show the tag index").set_defaults(func=cmd_tags)
