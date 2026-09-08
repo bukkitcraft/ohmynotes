@@ -28,9 +28,6 @@ Requires **Python 3.8+** and a POSIX shell. No other dependencies.
 **Package managers** (if you prefer):
 
 ```bash
-# Arch / AUR (yay, paru, …)
-yay -S omn
-
 # Homebrew (macOS / Linux)
 brew install bukkitcraft/tap/omn
 ```
