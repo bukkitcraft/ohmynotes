@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-[![Testing](https://img.shields.io/badge/tests-54%20passing-brightgreen)](tests/)
+[![Testing](https://github.com/bukkictaft/ohmynotes/actions/workflows/test.yml/badge.svg)](https://github.com/bukkictaft/ohmynotes/actions/workflows/test.yml)
 ![Dependencies: none](https://img.shields.io/badge/dependencies-none-orange)
 
 </div>
@@ -25,8 +25,20 @@ in the shell. Notes are plain JSON files on disk — inspectable, greppable,
 
 Requires **Python 3.8+** and a POSIX shell. No other dependencies.
 
+**Package managers** (if you prefer):
+
 ```bash
-git clone https://github.com/bukkticraft/ohmynotes   # wherever you keep tools
+# Arch / AUR (yay, paru, …)
+yay -S omn
+
+# Homebrew (macOS / Linux)
+brew install bukkictaft/tap/omn
+```
+
+**The pampered script** (works on every platform, one command):
+
+```bash
+git clone https://github.com/bukkictaft/ohmynotes   # wherever you keep tools
 cd ohmynotes
 sh install.sh
 ```
@@ -97,12 +109,12 @@ dropped. Set `NO_COLOR=1` (or pipe the output) to see the banner without colour.
 ## Quick start
 
 ```bash
-omn add "Q3 OKRs" -m "Fast ship; fewer meetings." -t planning -t 2026
+omn add "Q3 OKRs" -m "Fast ship; fewer meetings." -t planning
 omn add "gRPC retries" -m "exponential backoff, jitter, max 5 attempts" -t backend
 omn list
 omn search "retries"
-omn show g-rpc-retries
-omn tag g-rpc-retries -a infra
+omn show grpc-retries
+omn tag grpc-retries -t infra
 omn rm q3-okrs --force
 ```
 
@@ -114,10 +126,10 @@ omn rm q3-okrs --force
 
 Create a note.
 
-- `omn add "Title" -m "body"` — inline note. `-t` may be repeated.
+- `omn add "Title" -m "body"` — inline note. `-t` sets the note's one tag.
 - `omn add` with no arguments opens `$EDITOR` on a draft.
 - A URL-safe **slug** is generated from the title (`"gRPC retries"` →
-  `g-rpc-retries`), uniquified with a numeric suffix on collision, and used as
+  `grpc-retries`), uniquified with a numeric suffix on collision, and used as
   the stable identifier for every later command.
 - Empty editor sessions are discarded (`note discarded`).
 
@@ -195,10 +207,10 @@ Each note file is human-readable and fully portable:
 
 ```json
 {
-  "slug": "g-rpc-retries",
+  "slug": "grpc-retries",
   "title": "gRPC retries",
   "body": "exponential backoff, jitter, max 5 attempts",
-  "tags": ["backend"],
+  "tag": "backend",
   "created": "2026-09-08T18:38:21Z",
   "updated": "2026-09-08T18:40:02Z"
 }
@@ -217,8 +229,8 @@ Every choice here is a deliberate trade-off, documented for the record:
 |---|---|
 | **Python 3, stdlib only** | "Works after one install command" with zero resolution, build, or dependency risk; Python ships with every POSIX box. |
 | **One JSON file per note** | Corruption is isolated per note, files are inspectable/greppable, and storage is trivially portable without any database server. |
-| **Short, readable slugs as IDs** | Daily use should not require remembering hashes; `omn show g-rpc-retries` beats `omn show 9f3a1bc2`. |
-| **Tags stored on the note, index as a cache** | The note file is the source of truth; `tags.json` is rebuilt if it ever looks stale, so tag integrity can't silently rot. |
+| **Short, readable slugs as IDs** | Daily use should not require remembering hashes; `omn show grpc-retries` beats `omn show 9f3a1bc2`. |
+| **Exactly one tag per note** | Two mutually exclusive tags (say `work` and `study`) is a contradiction most tools can't express — `omn` forces the choice, keeps the index trivial, and `#TAG` filtering stays a no-brainer. |
 | **`$VISUAL`/`$EDITOR` for editing** | The Unix convention; zero config for users who already set an editor, sane `vi` fallback for those who don't. |
 | **Auto colour with `NO_COLOR` / TTY detection** | Piped output stays clean (no ANSI garbage in scripts) while interactive use stays readable. |
 | **Ranked regex search over a linear scan** | Simple, dependency-free, and more than fast enough for a personal corpus of thousands of notes. |
