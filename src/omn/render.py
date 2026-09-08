@@ -317,30 +317,30 @@ def render_welcome(version: str) -> str:
     return "\n".join(lines)
 
 
-# Emoji are rendered ONLY when colour is on (a real TTY): pipes, files and
+# Icons are rendered ONLY when colour is on (a real TTY): pipes, files and
 # NO_COLOR output stay plain so no terminal can ever show a tofu box.
-# Deliberately no U+FE0F variation selectors: some fonts merge the VS into
-# a wide glyph and swallow the following space, gluing emoji to the name.
+# All commands use Font Awesome glyphs (Nerd Font Private Use Area) so the
+# whole list is one consistent icon family — no mixing emoji flavours, no
+# variation selectors a font could swallow.
 _HELP_CMDS = [
-    ("add",   "➕", "create a note"),
-    ("list",  "📔", "list notes"),
-    ("show",  "👁", "view a single note"),
-    ("edit",  "🖊", "edit a note"),
-    ("rm",    "❌", "delete a note"),
-    ("tag",   "🏷", "set a note's single tag"),
-    ("tags",  "🗂", "tag index"),
-    ("search", "🔍", "full-text search"),
-    ("config", "📝", "choose banner style & gradient"),
+    ("add",   "\uf067", "create a note"),    # fa-plus
+    ("list",  "\uf03a", "list notes"),       # fa-list
+    ("show",  "\uf06e", "view a single note"),  # fa-eye
+    ("edit",  "\uf040", "edit a note"),      # fa-pencil
+    ("rm",    "\uf00d", "delete a note"),    # fa-times
+    ("tag",   "\uf02b", "set a note's single tag"),  # fa-tag
+    ("tags",  "\uf02c", "tag index"),        # fa-tags
+    ("search", "\uf002", "full-text search"),  # fa-search
+    ("config", "\uf013", "choose banner style & gradient"),  # fa-cog
 ]
 
 
 def render_help_commands() -> str:
     """Render the compact two-column command summary shown by bare ``omn``.
 
-    One literal space separates emoji from the command name (matching what a
-    user typing ``➕ add`` sees); the description is anchored with a tab stop
-    so it stays on the same column regardless of how many cells each emoji
-    occupies in the active font.
+    One literal space separates the icon from the command name; the
+    description is anchored with a tab stop so it stays on the same column
+    regardless of how many cells each Font Awesome glyph occupies.
     """
     header = _c(BOLD + FG_GREEN, "commands:")
     rows = []
