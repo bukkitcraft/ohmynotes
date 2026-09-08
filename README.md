@@ -2,9 +2,7 @@
 
 <div align="center">
 
-<!-- HERO BANNER — görseli documents/banner.png olarak ekledikten sonra bu satırın yorum işaretini kaldır:
-<img src="documents/banner.png" width="1280" alt="oh-my-notes — terminal-native notes">
--->
+<img src="assets/banner.png" width="1280" alt="oh-my-notes — terminal-native notes">
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
